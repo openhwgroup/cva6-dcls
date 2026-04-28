@@ -594,9 +594,13 @@ module cva6_dcls
     assign dmr_failure_o = 1'b0;
 
     // No HMR unit in single-core: respond to APB with a slave error
-    assign hmr_apb_rsp_o.prdata  = '0;
-    assign hmr_apb_rsp_o.pready  = 1'b1;
-    assign hmr_apb_rsp_o.pslverr = 1'b1;
+    apb_err_slv #(
+      .req_t  (apb_req_t),
+      .resp_t (apb_rsp_t)
+    ) i_apb_err_slv (
+      .slv_req_i  (hmr_apb_req_i),
+      .slv_resp_o (hmr_apb_rsp_o)
+    );
 
     always_comb begin
       hmr2core[0]                      = sys_inputs[0];

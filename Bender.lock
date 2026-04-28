@@ -33,7 +33,7 @@ packages:
     revision: 5a4a61fbced62e43199ccc1512f8358a8644dd41
     version: null
     source:
-      Git: https://github.com/ricted98/cva6.git
+      Git: https://github.com/FondazioneChipsIT/cva6.git
     dependencies:
     - axi
     - common_cells

@@ -14,5 +14,9 @@ dependencies:
   redundancy_cells:   {git: "https://github.com/pulp-platform/redundancy_cells.git",   rev: "3c7c57e80fe2f65812db092182ce68ee810943df"} # branch: master
   register_interface: {git: "https://github.com/pulp-platform/register_interface.git", rev: "d6e1d4cdaab7870f4faf3f88a1c788eaf5ac129d"} # branch: master
 
+workspace:
+  package_links:
+    cva6: cva6
+
 sources:
   - rtl/src/cva6_dcls.sv

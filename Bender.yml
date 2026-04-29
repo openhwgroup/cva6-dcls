@@ -10,7 +10,7 @@ package:
 
 dependencies:
   apb:                {git: "https://github.com/pulp-platform/apb.git",                rev: "4821618d652cb2b219483f037395b902771a44dd"} # branch: master
-  cva6:               {git: "https://github.com/FondazioneChipsIT/cva6.git",           rev: "5a4a61fbced62e43199ccc1512f8358a8644dd41"} # branch: rigoletto
+  cva6:               {git: "https://github.com/FondazioneChipsIT/cva6.git",           rev: "341e393af859a3eb6ec7d4d5f66eacb17a00c3a1"} # branch: rigoletto
   redundancy_cells:   {git: "https://github.com/pulp-platform/redundancy_cells.git",   rev: "3c7c57e80fe2f65812db092182ce68ee810943df"} # branch: master
   register_interface: {git: "https://github.com/pulp-platform/register_interface.git", rev: "d6e1d4cdaab7870f4faf3f88a1c788eaf5ac129d"} # branch: master
 

@@ -354,7 +354,7 @@ module cva6_dcls
 
   // HPDcache configuration with external SRAM enabled
   localparam hpdcache_pkg::hpdcache_cfg_t HPDcacheCfg =
-      cva6_hpdcache_subsystem_pkg::hpdcacheBuildCfg(CVA6Cfg, NumPorts, 1'b1);
+      cva6_hpdcache_subsystem_pkg::hpdcacheBuildCfg(CVA6Cfg, NumPorts);
 
   // External SRAM type definitions
   `HPDCACHE_TYPEDEF_EXT_SRAM_REQ_T(dcache_ext_sram_req_t, HPDcacheCfg);

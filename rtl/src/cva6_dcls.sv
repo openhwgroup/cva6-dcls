@@ -569,6 +569,7 @@ module cva6_dcls
     ) i_cva6 (
         .clk_i       (clk_i),
         .rst_ni      (rst_ni),
+        .clear_i     (1'b0),
         .boot_addr_i (hmr2core[i].boot_addr),
         .hart_id_i   (hmr2core[i].hart_id),
         .irq_i       (hmr2core[i].irq),

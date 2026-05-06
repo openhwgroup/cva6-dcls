@@ -627,7 +627,7 @@ module cva6_dcls
       .rst_ni    (rst_ni),
       .penable_i (hmr_apb_req_i.penable),
       .pwrite_i  (hmr_apb_req_i.pwrite),
-      .paddr_i   (hmr_apb_req_i.paddr),
+      .paddr_i   (hmr_apb_req_i.paddr[31:0]),
       .psel_i    (hmr_apb_req_i.psel),
       .pwdata_i  (hmr_apb_req_i.pwdata),
       .prdata_o  (hmr_apb_rsp_o.prdata),

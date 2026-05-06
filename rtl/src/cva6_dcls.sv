@@ -505,9 +505,9 @@ module cva6_dcls
 
   //  External I$ SRAM instantiation
   icache_memwrap #(
-      .CVA6Cfg                (CVA6Cfg),
-      .icache_ext_sram_req_t  (icache_ext_sram_req_t),
-      .icache_ext_sram_resp_t (icache_ext_sram_resp_t)
+      .CVA6Cfg            (CVA6Cfg),
+      .icache_sram_req_t  (icache_ext_sram_req_t),
+      .icache_sram_resp_t (icache_ext_sram_resp_t)
   ) i_icache_memwrap (
       .clk_i  (clk_i),
       .rst_ni (rst_ni),
@@ -564,9 +564,8 @@ module cva6_dcls
         .cvxif_resp_t        (cvxif_resp_t),
         .dcache_ext_sram_req_t  (dcache_ext_sram_req_t),
         .dcache_ext_sram_resp_t (dcache_ext_sram_resp_t),
-        .IcacheExternalSram     (1'b1),
-        .icache_ext_sram_req_t  (icache_ext_sram_req_t),
-        .icache_ext_sram_resp_t (icache_ext_sram_resp_t)
+        .icache_sram_req_t  (icache_ext_sram_req_t),
+        .icache_sram_resp_t (icache_ext_sram_resp_t)
     ) i_cva6 (
         .clk_i       (clk_i),
         .rst_ni      (rst_ni),

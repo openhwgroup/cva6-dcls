@@ -30,7 +30,7 @@ packages:
       Git: https://github.com/pulp-platform/common_verification.git
     dependencies: []
   cva6:
-    revision: 341e393af859a3eb6ec7d4d5f66eacb17a00c3a1
+    revision: 238998f4e8d8772470aa2a32d044541089180654
     version: null
     source:
       Git: https://github.com/FondazioneChipsIT/cva6.git
@@ -55,7 +55,7 @@ packages:
     dependencies:
     - common_cells
   redundancy_cells:
-    revision: 3c7c57e80fe2f65812db092182ce68ee810943df
+    revision: ac3597a8ae824dfc9b4bbda3d66d28786675ca83
     version: null
     source:
       Git: https://github.com/pulp-platform/redundancy_cells.git

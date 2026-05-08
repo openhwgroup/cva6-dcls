@@ -354,7 +354,7 @@ module cva6_dcls
 
   // HPDcache configuration with external SRAM enabled
   localparam hpdcache_pkg::hpdcache_cfg_t HPDcacheCfg =
-      cva6_hpdcache_subsystem_pkg::hpdcacheBuildCfg(CVA6Cfg, NumPorts, 1'b1);
+      cva6_hpdcache_subsystem_pkg::hpdcacheBuildCfg(CVA6Cfg, NumPorts);
 
   // External SRAM type definitions
   `HPDCACHE_TYPEDEF_EXT_SRAM_REQ_T(dcache_ext_sram_req_t, HPDcacheCfg);
@@ -505,9 +505,9 @@ module cva6_dcls
 
   //  External I$ SRAM instantiation
   icache_memwrap #(
-      .CVA6Cfg                (CVA6Cfg),
-      .icache_ext_sram_req_t  (icache_ext_sram_req_t),
-      .icache_ext_sram_resp_t (icache_ext_sram_resp_t)
+      .CVA6Cfg            (CVA6Cfg),
+      .icache_sram_req_t  (icache_ext_sram_req_t),
+      .icache_sram_resp_t (icache_ext_sram_resp_t)
   ) i_icache_memwrap (
       .clk_i  (clk_i),
       .rst_ni (rst_ni),
@@ -564,12 +564,12 @@ module cva6_dcls
         .cvxif_resp_t        (cvxif_resp_t),
         .dcache_ext_sram_req_t  (dcache_ext_sram_req_t),
         .dcache_ext_sram_resp_t (dcache_ext_sram_resp_t),
-        .IcacheExternalSram     (1'b1),
-        .icache_ext_sram_req_t  (icache_ext_sram_req_t),
-        .icache_ext_sram_resp_t (icache_ext_sram_resp_t)
+        .icache_sram_req_t  (icache_ext_sram_req_t),
+        .icache_sram_resp_t (icache_ext_sram_resp_t)
     ) i_cva6 (
         .clk_i       (clk_i),
         .rst_ni      (rst_ni),
+        .clear_i     (1'b0),
         .boot_addr_i (hmr2core[i].boot_addr),
         .hart_id_i   (hmr2core[i].hart_id),
         .irq_i       (hmr2core[i].irq),
@@ -628,7 +628,7 @@ module cva6_dcls
       .rst_ni    (rst_ni),
       .penable_i (hmr_apb_req_i.penable),
       .pwrite_i  (hmr_apb_req_i.pwrite),
-      .paddr_i   (hmr_apb_req_i.paddr),
+      .paddr_i   (hmr_apb_req_i.paddr[31:0]),
       .psel_i    (hmr_apb_req_i.psel),
       .pwdata_i  (hmr_apb_req_i.pwdata),
       .prdata_o  (hmr_apb_rsp_o.prdata),

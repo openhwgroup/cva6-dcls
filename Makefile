@@ -1,3 +1,6 @@
+# Copyright 2026 ETH Zurich, University of Bologna, Fondazione Chips-IT, Eclipse Foundation
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
 BENDER ?= bender
 
 VLOG_ARGS  ?= -timescale 1ns/1ps

@@ -4,8 +4,8 @@
 package:
   name: cva6-dcls
   authors:
-    - "Riccardo Tedeschi <riccardo.tedeschi6@unibo.it"
-    - "Yvan Tortorella   <yvan.tortorella@chips.it"
+    - "Riccardo Tedeschi <riccardo.tedeschi6@unibo.it>"
+    - "Yvan Tortorella   <yvan.tortorella@chips.it>"
     - "Junchao Chen      <junchao.chen@eclipse-foundation.org>"
 
 dependencies:

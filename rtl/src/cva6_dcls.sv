@@ -1,6 +1,14 @@
 // Copyright 2026 ETH Zurich, University of Bologna, Fondazione Chips-IT, Eclipse Foundation
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 
+// Top-level wrapper for a Dual Core Lock-Step (DCLS) configuration for CVA6.
+// Based on EnableDMR, either one or two physical cores are instantiated.
+// If HMR is also enabled, both cores can be logically used.
+// Alongside the cores, the wrapper instantiates the HMR unit, which takes
+// care of properly comparing the core outputs and muxing the inputs.
+// Lastly, externalized SRAM macros for the caches are used to enable checking
+// logic to observe actual operations outside the cache subsystem hierarchy.
+
 `include "rvfi_types.svh"
 `include "cvxif_types.svh"
 `include "hpdcache_typedef.svh"

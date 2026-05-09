@@ -7,7 +7,7 @@ VLOG_ARGS  ?= -timescale 1ns/1ps
 VLT_ARGS   ?=
 
 # Target configuration for CVA6
-BENDER_CVA6_TARGET ?= -t cv64a6_imafdchsclic_sv39_wb
+BENDER_CVA6_TARGET ?= -t cv64a6_imafdc_sv39_hpdcache_wb
 # Common targets for RTL simulation
 BENDER_CVA6_DCLS_RTL_TARGETS ?= -t rtl $(BENDER_CVA6_TARGET)
 

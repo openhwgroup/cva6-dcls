@@ -17,11 +17,19 @@ module cva6_dcls
   import ariane_pkg::*;
 #(
     // Top configurations
+    // EnableDMR - Enables CVA6 Double-Modular Redundancy
+    // If enabled, multiple CVA6 cores are instantiated and can be used
+    // for DCLS execution
     parameter bit EnableDMR = 1'b1,
+    // EnableHMR - CVA6 Hybrid-Modular Redundancy
+    // If enabled, multiple cores can be configured for independent
+    // or redundant execution mode at runtime. If disabled, the available
+    // cores operate in fixed DCLS mode
     parameter bit EnableHMR = 1'b0,
 
-    localparam int unsigned NumPhysicalCores = EnableDMR ? 2 : 1,
-    localparam int unsigned NumLogicalCores  = EnableHMR ? NumPhysicalCores : 1,
+    // NumPhysicalCores - Number of physically available CVA6 cores
+    parameter int unsigned NumPhysicalCores = 2,
+    localparam int unsigned NumLogicalCores  = EnableHMR ? NumPhysicalCores : NumPhysicalCores/2,
 
     // CVA6 config
     parameter config_pkg::cva6_cfg_t CVA6Cfg = build_config_pkg::build_config(
@@ -620,7 +628,7 @@ module cva6_dcls
       icache_ext_sram_resp_hmr2core[0] = icache_ext_sram_resp_sys2hmr;
     end
 
-  end else if (NumPhysicalCores == 2) begin : gen_hmr
+  end else begin : gen_hmr
 
     // Register bus wires between the APB bridge and hmr_unit
     hmr_reg_req_t hmr_reg_req;
@@ -656,9 +664,9 @@ module cva6_dcls
     hmr_unit #(
       // Fixed DMR lockstep: 2 physical cores, 1 logical core visible to the system.
       // TMR and rapid recovery are disabled. The NOC request is the voted nominal output.
-      .NumCores              (2),
-      .DMRFixed              (1'b1),
-      .DMRSupported          (1'b0),
+      .NumCores              (NumPhysicalCores),
+      .DMRFixed              (!EnableHMR&EnableDMR),
+      .DMRSupported          (EnableDMR),
       .TMRFixed              (1'b0),
       .TMRSupported          (1'b0),
       .InterleaveGrps        (1'b1),
@@ -718,7 +726,7 @@ module cva6_dcls
     );
 
     // Assemble final core inputs: override boot_addr with the checkpoint-aware value from HMR
-    for (genvar i = 0; i < 2; i++) begin : gen_hmr_core_inputs
+    for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_hmr_core_inputs
       always_comb begin
         hmr2core[i]           = hmr_core_inputs_raw[i];
         hmr2core[i].boot_addr = hmr_core_bootaddress[i];
@@ -726,7 +734,7 @@ module cva6_dcls
     end
 
     // NOC response: broadcast the single system response to both cores in lockstep
-    for (genvar i = 0; i < 2; i++) begin : gen_noc_resp_bcast
+    for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_noc_resp_bcast
       assign noc_resp_hmr2core[i] = noc_resp_sys2hmr[0];
     end
 
@@ -734,13 +742,11 @@ module cva6_dcls
     // Forward core[0]'s requests to the shared SRAMs and broadcast the response.
     assign dcache_ext_sram_req_hmr2sys = dcache_ext_sram_req_core2hmr[0];
     assign icache_ext_sram_req_hmr2sys = icache_ext_sram_req_core2hmr[0];
-    for (genvar i = 0; i < 2; i++) begin : gen_sram_resp_bcast
+    for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_sram_resp_bcast
       assign dcache_ext_sram_resp_hmr2core[i] = dcache_ext_sram_resp_sys2hmr;
       assign icache_ext_sram_resp_hmr2core[i] = icache_ext_sram_resp_sys2hmr;
     end
 
-  end else begin
-    $error("Unsupported number of cores.");
   end
 
 endmodule : cva6_dcls

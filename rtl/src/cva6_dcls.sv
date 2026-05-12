@@ -411,7 +411,7 @@ module cva6_dcls
     logic [CVA6Cfg.ICACHE_SET_ASSOC-1:0][CVA6Cfg.ICACHE_USER_LINE_WIDTH-1:0] data_ruser;
   } icache_ext_sram_resp_t;
 
-  // Packed struct wrapping all core scalar inputs
+  // Packed struct wrapping all core inputs
   typedef struct packed {
     logic [CVA6Cfg.VLEN-1:0] boot_addr;
     logic [CVA6Cfg.XLEN-1:0] hart_id;
@@ -419,7 +419,17 @@ module cva6_dcls
     logic                    ipi;
     logic                    time_irq;
     logic                    debug_req;
+    noc_resp_t               noc_resp;
+    dcache_ext_sram_resp_t   dcache_ext_sram_resp;
+    icache_ext_sram_resp_t   icache_ext_sram_resp;
   } cva6_inputs_t;
+
+  // Packed struct wrapping all core outputs
+  typedef struct packed {
+    noc_req_t             noc_req;
+    dcache_ext_sram_req_t dcache_ext_sram_req;
+    icache_ext_sram_req_t icache_ext_sram_req;
+  } cva6_outputs_t;
 
   // Register interface types for hmr_unit configuration (PULP reg_intf-compatible)
   typedef struct packed {
@@ -434,17 +444,6 @@ module cva6_dcls
     logic        error;
     logic        ready;
   } hmr_reg_rsp_t;
-
-  // Pack top-level inputs into cva6_inputs_t array [NumLogicalCores]
-  cva6_inputs_t [NumLogicalCores-1:0] sys_inputs;
-  for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_sys_inputs
-    assign sys_inputs[i].boot_addr = boot_addr_i[i];
-    assign sys_inputs[i].hart_id   = hart_id_i[i];
-    assign sys_inputs[i].irq       = irq_i[i];
-    assign sys_inputs[i].ipi       = ipi_i[i];
-    assign sys_inputs[i].time_irq  = time_irq_i[i];
-    assign sys_inputs[i].debug_req = debug_req_i[i];
-  end
 
   // Intermediate signals: cores <-> HMR
   cva6_inputs_t [NumPhysicalCores-1:0] hmr2core;
@@ -462,11 +461,19 @@ module cva6_dcls
   noc_req_t  [NumLogicalCores-1:0] noc_req_hmr2sys;
   noc_resp_t [NumLogicalCores-1:0] noc_resp_sys2hmr;
 
-  dcache_ext_sram_req_t  dcache_ext_sram_req_hmr2sys;
-  dcache_ext_sram_resp_t dcache_ext_sram_resp_sys2hmr;
+  dcache_ext_sram_req_t  [NumLogicalCores-1:0] dcache_ext_sram_req_hmr2sys;
+  dcache_ext_sram_resp_t [NumLogicalCores-1:0] dcache_ext_sram_resp_sys2hmr;
 
-  icache_ext_sram_req_t  icache_ext_sram_req_hmr2sys;
-  icache_ext_sram_resp_t icache_ext_sram_resp_sys2hmr;
+  icache_ext_sram_req_t  [NumLogicalCores-1:0] icache_ext_sram_req_hmr2sys;
+  icache_ext_sram_resp_t [NumLogicalCores-1:0] icache_ext_sram_resp_sys2hmr;
+
+  // Properly pack core outputs
+  cva6_outputs_t [NumPhysicalCores-1:0] core_nominal_outputs;
+  for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_core_nominal_outputs
+    assign core_nominal_outputs[i].noc_req             = noc_req_core2hmr[i];
+    assign core_nominal_outputs[i].dcache_ext_sram_req = dcache_ext_sram_req_core2hmr[i];
+    assign core_nominal_outputs[i].icache_ext_sram_req = icache_ext_sram_req_core2hmr[i];
+  end
 
   // System NOC binding
   for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_noc_binding
@@ -474,62 +481,88 @@ module cva6_dcls
     assign noc_resp_sys2hmr[i] = noc_resp_i[i];
   end
 
+  // Pack top-level inputs into cva6_inputs_t array [NumLogicalCores]
+  cva6_inputs_t [NumLogicalCores-1:0] sys_inputs;
+  for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_sys_inputs
+    assign sys_inputs[i].boot_addr            = boot_addr_i[i];
+    assign sys_inputs[i].hart_id              = hart_id_i[i];
+    assign sys_inputs[i].irq                  = irq_i[i];
+    assign sys_inputs[i].ipi                  = ipi_i[i];
+    assign sys_inputs[i].time_irq             = time_irq_i[i];
+    assign sys_inputs[i].debug_req            = debug_req_i[i];
+    assign sys_inputs[i].noc_resp             = noc_resp_sys2hmr[i];
+    assign sys_inputs[i].dcache_ext_sram_resp = dcache_ext_sram_resp_sys2hmr[i];
+    assign sys_inputs[i].icache_ext_sram_resp = icache_ext_sram_resp_sys2hmr[i];
+  end
+
+  // Unpack top-level outputs
+  cva6_outputs_t [NumLogicalCores-1:0] sys_nominal_outputs;
+  for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_sys_outputs
+    assign noc_req_hmr2sys[i]             = sys_nominal_outputs[i].noc_req;
+    assign dcache_ext_sram_req_hmr2sys[i] = sys_nominal_outputs[i].dcache_ext_sram_req;
+    assign icache_ext_sram_req_hmr2sys[i] = sys_nominal_outputs[i].icache_ext_sram_req;
+  end
+
   //  External D$ SRAM instantiation (HPDCache only)
-  if (CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT ||
-      CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WB ||
-      CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT_WB
-  ) begin : gen_dcache_memwrap
-    hpdcache_memwrap #(
-        .HPDcacheCfg                 (HPDcacheCfg),
-        .hpdcache_way_vector_t       (sram_way_vector_t),
-        .hpdcache_dir_addr_t         (sram_dir_addr_t),
-        .hpdcache_dir_entry_t        (sram_dir_entry_t),
-        .hpdcache_data_addr_t        (sram_data_addr_t),
-        .hpdcache_data_enable_t      (sram_data_enable_t),
-        .hpdcache_data_be_entry_t    (sram_data_be_entry_t),
-        .hpdcache_data_entry_t       (sram_data_entry_t),
-        .hpdcache_data_row_enable_t  (sram_data_row_enable_t),
-        .hpdcache_data_ram_word_sel_t(sram_data_ram_word_sel_t)
-    ) i_dcache_memwrap (
-        .clk_i  (clk_i),
-        .rst_ni (rst_ni),
+  for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_dcache_memwrap
+    if (CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT ||
+        CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WB ||
+        CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT_WB
+    ) begin : gen_dcache_memwrap
+      hpdcache_memwrap #(
+          .HPDcacheCfg                 (HPDcacheCfg),
+          .hpdcache_way_vector_t       (sram_way_vector_t),
+          .hpdcache_dir_addr_t         (sram_dir_addr_t),
+          .hpdcache_dir_entry_t        (sram_dir_entry_t),
+          .hpdcache_data_addr_t        (sram_data_addr_t),
+          .hpdcache_data_enable_t      (sram_data_enable_t),
+          .hpdcache_data_be_entry_t    (sram_data_be_entry_t),
+          .hpdcache_data_entry_t       (sram_data_entry_t),
+          .hpdcache_data_row_enable_t  (sram_data_row_enable_t),
+          .hpdcache_data_ram_word_sel_t(sram_data_ram_word_sel_t)
+      ) i_dcache_memwrap (
+          .clk_i  (clk_i),
+          .rst_ni (rst_ni),
 
-        // Directory
-        .dir_cs_i        (dcache_ext_sram_req_hmr2sys.dir_cs),
-        .dir_we_i        (dcache_ext_sram_req_hmr2sys.dir_we),
-        .dir_addr_i      (dcache_ext_sram_req_hmr2sys.dir_addr),
-        .dir_wentry_i    (dcache_ext_sram_req_hmr2sys.dir_wentry),
-        .dir_rentry_o    (dcache_ext_sram_resp_sys2hmr.dir_rentry),
-        .dir_err_cor_o   (dcache_ext_sram_resp_sys2hmr.dir_err_cor),
-        .dir_err_unc_o   (dcache_ext_sram_resp_sys2hmr.dir_err_unc),
-        .dir_err_valid_o (dcache_ext_sram_resp_sys2hmr.dir_err_valid),
-        .dir_err_dirty_o (dcache_ext_sram_resp_sys2hmr.dir_err_dirty),
+          // Directory
+          .dir_cs_i        (dcache_ext_sram_req_hmr2sys[i].dir_cs),
+          .dir_we_i        (dcache_ext_sram_req_hmr2sys[i].dir_we),
+          .dir_addr_i      (dcache_ext_sram_req_hmr2sys[i].dir_addr),
+          .dir_wentry_i    (dcache_ext_sram_req_hmr2sys[i].dir_wentry),
+          .dir_rentry_o    (dcache_ext_sram_resp_sys2hmr[i].dir_rentry),
+          .dir_err_cor_o   (dcache_ext_sram_resp_sys2hmr[i].dir_err_cor),
+          .dir_err_unc_o   (dcache_ext_sram_resp_sys2hmr[i].dir_err_unc),
+          .dir_err_valid_o (dcache_ext_sram_resp_sys2hmr[i].dir_err_valid),
+          .dir_err_dirty_o (dcache_ext_sram_resp_sys2hmr[i].dir_err_dirty),
 
-        // Data
-        .data_addr_i       (dcache_ext_sram_req_hmr2sys.data_addr),
-        .data_cs_i         (dcache_ext_sram_req_hmr2sys.data_cs),
-        .data_we_i         (dcache_ext_sram_req_hmr2sys.data_we),
-        .data_wbyteenable_i(dcache_ext_sram_req_hmr2sys.data_wbyteenable),
-        .data_wentry_i     (dcache_ext_sram_req_hmr2sys.data_wentry),
-        .data_rentry_o     (dcache_ext_sram_resp_sys2hmr.data_rentry),
-        .data_err_cor_o    (dcache_ext_sram_resp_sys2hmr.data_err_cor),
-        .data_err_unc_o    (dcache_ext_sram_resp_sys2hmr.data_err_unc)
-    );
-  end else begin : gen_no_dcache_memwrap
-    assign dcache_ext_sram_resp_sys2hmr = '0;
+          // Data
+          .data_addr_i       (dcache_ext_sram_req_hmr2sys[i].data_addr),
+          .data_cs_i         (dcache_ext_sram_req_hmr2sys[i].data_cs),
+          .data_we_i         (dcache_ext_sram_req_hmr2sys[i].data_we),
+          .data_wbyteenable_i(dcache_ext_sram_req_hmr2sys[i].data_wbyteenable),
+          .data_wentry_i     (dcache_ext_sram_req_hmr2sys[i].data_wentry),
+          .data_rentry_o     (dcache_ext_sram_resp_sys2hmr[i].data_rentry),
+          .data_err_cor_o    (dcache_ext_sram_resp_sys2hmr[i].data_err_cor),
+          .data_err_unc_o    (dcache_ext_sram_resp_sys2hmr[i].data_err_unc)
+      );
+    end else begin : gen_no_dcache_memwrap
+      assign dcache_ext_sram_resp_sys2hmr[i] = '0;
+    end
   end
 
   //  External I$ SRAM instantiation
-  icache_memwrap #(
-      .CVA6Cfg            (CVA6Cfg),
-      .icache_sram_req_t  (icache_ext_sram_req_t),
-      .icache_sram_resp_t (icache_ext_sram_resp_t)
-  ) i_icache_memwrap (
-      .clk_i  (clk_i),
-      .rst_ni (rst_ni),
-      .req_i  (icache_ext_sram_req_hmr2sys),
-      .resp_o (icache_ext_sram_resp_sys2hmr)
-  );
+  for (genvar i = 0; i < NumLogicalCores; i++) begin : gen_icache_memwrap
+    icache_memwrap #(
+        .CVA6Cfg            (CVA6Cfg),
+        .icache_sram_req_t  (icache_ext_sram_req_t),
+        .icache_sram_resp_t (icache_ext_sram_resp_t)
+    ) i_icache_memwrap (
+        .clk_i  (clk_i),
+        .rst_ni (rst_ni),
+        .req_i  (icache_ext_sram_req_hmr2sys[i]),
+        .resp_o (icache_ext_sram_resp_sys2hmr[i])
+    );
+  end
 
   //  Core instantiation
   //  RVFI and CVXIF are propagated only from core 0 (excluded from HMR)
@@ -619,13 +652,12 @@ module cva6_dcls
     );
 
     always_comb begin
-      hmr2core[0]                      = sys_inputs[0];
-      noc_req_hmr2sys[0]               = noc_req_core2hmr[0];
-      noc_resp_hmr2core[0]             = noc_resp_sys2hmr[0];
-      dcache_ext_sram_req_hmr2sys      = dcache_ext_sram_req_core2hmr[0];
-      dcache_ext_sram_resp_hmr2core[0] = dcache_ext_sram_resp_sys2hmr;
-      icache_ext_sram_req_hmr2sys      = icache_ext_sram_req_core2hmr[0];
-      icache_ext_sram_resp_hmr2core[0] = icache_ext_sram_resp_sys2hmr;
+      hmr2core[0]            = sys_inputs[0];
+      sys_nominal_outputs[0] = core_nominal_outputs[0];
+
+      noc_resp_hmr2core[0]             = hmr2core[0].noc_resp;
+      dcache_ext_sram_resp_hmr2core[0] = hmr2core[0].dcache_ext_sram_resp;
+      icache_ext_sram_resp_hmr2core[0] = hmr2core[0].icache_ext_sram_resp;
     end
 
   end else begin : gen_hmr
@@ -671,7 +703,7 @@ module cva6_dcls
       .TMRSupported          (1'b0),
       .InterleaveGrps        (1'b1),
       .all_inputs_t          (cva6_inputs_t),
-      .nominal_outputs_t     (noc_req_t),
+      .nominal_outputs_t     (cva6_outputs_t),
       .DefaultNominalOutputs ('0),
       .SeparateData          (1'b0),
       .NumBusVoters          (1),
@@ -712,7 +744,7 @@ module cva6_dcls
 
       // System side (NumSysCores=1 for DMRFixed)
       .sys_inputs_i          (sys_inputs),
-      .sys_nominal_outputs_o (noc_req_hmr2sys),
+      .sys_nominal_outputs_o (sys_nominal_outputs),
       .sys_bus_outputs_o     (/* open, SeparateData=0 */),
       .sys_fetch_en_i        ('1),
       .enable_bus_vote_i     ('1),
@@ -721,7 +753,7 @@ module cva6_dcls
       .core_bootaddress_o    (hmr_core_bootaddress),
       .core_setback_o        (hmr_core_setback),
       .core_inputs_o         (hmr_core_inputs_raw),
-      .core_nominal_outputs_i(noc_req_core2hmr),
+      .core_nominal_outputs_i(core_nominal_outputs),
       .core_bus_outputs_i    ('0)
     );
 
@@ -730,23 +762,12 @@ module cva6_dcls
       always_comb begin
         hmr2core[i]           = hmr_core_inputs_raw[i];
         hmr2core[i].boot_addr = hmr_core_bootaddress[i];
+
+        noc_resp_hmr2core[i]             = hmr2core[i].noc_resp;
+        dcache_ext_sram_resp_hmr2core[i] = hmr2core[i].dcache_ext_sram_resp;
+        icache_ext_sram_resp_hmr2core[i] = hmr2core[i].icache_ext_sram_resp;
       end
     end
-
-    // NOC response: broadcast the single system response to both cores in lockstep
-    for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_noc_resp_bcast
-      assign noc_resp_hmr2core[i] = noc_resp_sys2hmr[0];
-    end
-
-    // Cache SRAM: both cores produce identical requests in lockstep.
-    // Forward core[0]'s requests to the shared SRAMs and broadcast the response.
-    assign dcache_ext_sram_req_hmr2sys = dcache_ext_sram_req_core2hmr[0];
-    assign icache_ext_sram_req_hmr2sys = icache_ext_sram_req_core2hmr[0];
-    for (genvar i = 0; i < NumPhysicalCores; i++) begin : gen_sram_resp_bcast
-      assign dcache_ext_sram_resp_hmr2core[i] = dcache_ext_sram_resp_sys2hmr;
-      assign icache_ext_sram_resp_hmr2core[i] = icache_ext_sram_resp_sys2hmr;
-    end
-
   end
 
 endmodule : cva6_dcls

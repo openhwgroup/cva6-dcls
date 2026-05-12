@@ -3,10 +3,6 @@
 site/*
 *.ucdb
 covhtmlreport/*
-work/*
-transcript
-*.ini
-*.wlf
 *.vstf
 wlft*
 *nfs*
@@ -16,7 +12,7 @@ wlft*
 build/*
 /tmp*
 *.dasm
-/Bender.local
+Bender.local
 build/
 *.vcd
 *.fsdb
@@ -24,3 +20,10 @@ build/
 *.out
 *.jou
 *.o
+target/sim/vsim/compile.dcls.tcl
+target/sim/vsim/transcript
+target/sim/vsim/work/*
+target/sim/vsim/*.ini
+target/sim/vsim/*.wlf
+target/sim/vsim/trace_hart*.log
+target/sim/vlt/compile.dcls.tcl

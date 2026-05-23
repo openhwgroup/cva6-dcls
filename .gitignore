@@ -27,3 +27,16 @@ target/sim/vsim/*.ini
 target/sim/vsim/*.wlf
 target/sim/vsim/trace_hart*.log
 target/sim/vlt/compile.dcls.tcl
+
+# Bender/dependency outputs
+.bender/
+/cva6
+
+# Generated simulation scripts
+target/sim/vlt/compile.dcls.vlt
+
+# Simulation build outputs
+sim/verilator/obj_dir/
+sim/vsim/work/
+sim/vsim/work-dpi/
+

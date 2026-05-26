@@ -50,3 +50,4 @@ sim/verilator/results/
 # Questa build outputs
 sim/vsim/work/
 sim/vsim/work-dpi/
+/cva6

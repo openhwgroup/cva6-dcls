@@ -16,6 +16,7 @@
 `include "axi/assign.svh"
 `include "rvfi_types.svh"
 `include "iti_types.svh"
+`include "apb/typedef.svh"
 
 `ifdef VERILATOR
 `include "custom_uvm_macros.svh"
@@ -38,7 +39,8 @@ module cva6_dcls_testharness #(
   input  logic                           clk_i,
   input  logic                           rtc_i,
   input  logic                           rst_ni,
-  output logic [31:0]                    exit_o
+  output logic [31:0]                    exit_o,
+  output logic 				 dmr_failure_o
 );
 
   localparam [7:0] hart_id = '0;
@@ -383,8 +385,8 @@ module cva6_dcls_testharness #(
   `AXI_ASSIGN_FROM_RESP(master[ariane_soc::GPIO], gpio_resp)
   axi_err_slv #(
     .AxiIdWidth ( ariane_axi_soc::IdWidthSlave ),
-    .req_t      ( ariane_axi_soc::req_slv_t    ),
-    .resp_t     ( ariane_axi_soc::resp_slv_t   )
+    .axi_req_t  ( ariane_axi_soc::req_slv_t    ),
+    .axi_resp_t ( ariane_axi_soc::resp_slv_t   )
   ) i_gpio_err_slv (
     .clk_i      ( clk_i      ),
     .rst_ni     ( ndmreset_n ),
@@ -518,6 +520,7 @@ module cva6_dcls_testharness #(
     MaxSlvTrans: unsigned'(1), // Probably requires update
     FallThrough: 1'b0,
     LatencyMode: axi_pkg::NO_LATENCY,
+    PipelineStages: 0,
     AxiIdWidthSlvPorts: unsigned'(ariane_axi_soc::IdWidth),
     AxiIdUsedSlvPorts: unsigned'(ariane_axi_soc::IdWidth),
     UniqueIds: 1'b0,
@@ -621,58 +624,100 @@ module cva6_dcls_testharness #(
   uart_bus #(.BAUD_RATE(115200), .PARITY_EN(0)) i_uart_bus (.rx(tx), .tx(rx), .rx_en(1'b1));
 
   // ---------------
-  // Core
+  // Core: cva6_dcls
   // ---------------
-  ariane_axi::req_t    axi_ariane_req;
-  ariane_axi::resp_t   axi_ariane_resp;
+
+  localparam int unsigned DclsNumLogicalCores = 1;
+
+  typedef logic	[31:0]	apb_addr_t;
+  typedef logic	[31:0]	apb_data_t;
+  typedef logic	[3:0]	apb_strb_t;
+  `APB_TYPEDEF_REQ_T(hmr_apb_req_t, apb_addr_t, apb_data_t, apb_strb_t)
+  `APB_TYPEDEF_RESP_T(hmr_apb_rsp_t, apb_data_t)
+
+  hmr_apb_req_t hmr_apb_req;
+  hmr_apb_rsp_t hmr_apb_rsp;
+  assign hmr_apb_req = '0;
+
+  logic	[DclsNumLogicalCores-1:0][CVA6Cfg.VLEN-1:0]	dcls_boot_addr;
+  logic	[DclsNumLogicalCores-1:0][CVA6Cfg.VLEN-1:0]	dcls_hart_id;
+  logic	[DclsNumLogicalCores-1:0][1:0]			dcls_irq;
+  logic	[DclsNumLogicalCores-1:0]			dcls_ipi;
+  logic	[DclsNumLogicalCores-1:0]			dcls_time_irq;
+  logic	[DclsNumLogicalCores-1:0]			dcls_debug_req;
+
+  assign dcls_boot_addr[0]	= ariane_soc::ROMBase;
+  assign dcls_hart_id[0]	= {56'h0, hart_id};
+  assign dcls_irq[0]		= irqs;
+  assign dcls_ipi[0]		= ipi;
+  assign dcls_time_irq[0]	= timer_irq;
+  `ifdef SPIKE_TANDEM
+    assign dcls_debug_req[0]	= 1'h0;
+   `else
+    assign dcls_debug_req[0]	= debug_req_core;
+   `endif
+
+   ariane_axi::req_t	axi_dcls_req;
+   ariane_axi::resp_t	axi_dcls_resp;
+   ariane_axi::req_t	[DclsNumLogicalCores-1:0] axi_dcls_req_array;
+   ariane_axi::resp_t	[DclsNumLogicalCores-1:0] axi_dcls_resp_array;
+
+  assign axi_dcls_req		= axi_dcls_req_array[0];
+  assign axi_dcls_resp_array[0]	= axi_dcls_resp;
+
   rvfi_probes_t rvfi_probes;
   rvfi_csr_t rvfi_csr;
   rvfi_instr_t [CVA6Cfg.NrCommitPorts-1:0]  rvfi_instr;
   rvfi_to_iti_t rvfi_to_iti;
   iti_to_encoder_t iti_to_encoder;
 
-  ariane #(
+  cva6_dcls #(
+    .EnableDMR		  ( 1'b1		),
+    .EnableHMR		  ( 1'b0		),
+    .NumPhysicalCores	  ( 2			),
     .CVA6Cfg              ( CVA6Cfg             ),
     .rvfi_probes_instr_t  ( rvfi_probes_instr_t ),
     .rvfi_probes_csr_t    ( rvfi_probes_csr_t   ),
     .rvfi_probes_t        ( rvfi_probes_t       ),
     .noc_req_t            ( ariane_axi::req_t   ),
-    .noc_resp_t           ( ariane_axi::resp_t  )
-  ) i_ariane (
+    .noc_resp_t           ( ariane_axi::resp_t  ),
+    .apb_req_t		  ( hmr_apb_req_t	),
+    .apb_rsp_t		  ( hmr_apb_rsp_t	)
+  ) i_cva6_dcls (
     .clk_i                ( clk_i               ),
     .rst_ni               ( ndmreset_n          ),
-    .boot_addr_i          ( ariane_soc::ROMBase ), // start fetching from ROM
-    .hart_id_i            ( {56'h0, hart_id}    ),
-    .irq_i                ( irqs                ),
-    .ipi_i                ( ipi                 ),
-    .time_irq_i           ( timer_irq           ),
+    .dmr_failure_o	  ( dmr_failure_o	),
+    .hmr_apb_req_i	  ( hmr_apb_req		),
+    .hmr_apb_rsp_o	  ( hmr_apb_rsp	),
+    .boot_addr_i	  ( dcls_boot_addr	),
+    .hart_id_i		  ( dcls_hart_id	),
+    .irq_i		  ( dcls_irq		),
+    .ipi_i		  ( dcls_ipi		),
+    .time_irq_i		  ( dcls_time_irq	),
     .rvfi_probes_o        ( rvfi_probes         ),
-// Disable Debug when simulating with Spike
-`ifdef SPIKE_TANDEM
-    .debug_req_i          ( 1'b0                ),
-`else
-    .debug_req_i          ( debug_req_core      ),
-`endif
-    .noc_req_o            ( axi_ariane_req      ),
-    .noc_resp_i           ( axi_ariane_resp     )
+    .cvxif_req_o	  ( 			),
+    .cvxif_resp_i	  ( '0			),
+    .debug_req_i	  ( dcls_debug_req	),
+    .noc_req_o		  ( axi_dcls_req_array	),
+    .noc_resp_i		  ( axi_dcls_resp_array	)
   );
 
-  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req)
-  `AXI_ASSIGN_TO_RESP(axi_ariane_resp, slave[0])
+  `AXI_ASSIGN_FROM_REQ(slave[0], axi_dcls_req)
+  `AXI_ASSIGN_TO_RESP(axi_dcls_resp, slave[0])
 
   // -------------
   // Simulation Helper Functions
   // -------------
   // check for response errors
   always_ff @(posedge clk_i) begin : p_assert
-    if (axi_ariane_req.r_ready &&
-      axi_ariane_resp.r_valid &&
-      axi_ariane_resp.r.resp inside {axi_pkg::RESP_DECERR, axi_pkg::RESP_SLVERR}) begin
+    if (axi_dcls_req.r_ready &&
+      axi_dcls_resp.r_valid &&
+      axi_dcls_resp.r.resp inside {axi_pkg::RESP_DECERR, axi_pkg::RESP_SLVERR}) begin
       $warning("R Response Errored");
     end
-    if (axi_ariane_req.b_ready &&
-      axi_ariane_resp.b_valid &&
-      axi_ariane_resp.b.resp inside {axi_pkg::RESP_DECERR, axi_pkg::RESP_SLVERR}) begin
+    if (axi_dcls_req.b_ready &&
+      axi_dcls_resp.b_valid &&
+      axi_dcls_resp.b.resp inside {axi_pkg::RESP_DECERR, axi_pkg::RESP_SLVERR}) begin
       $warning("B Response Errored");
     end
   end

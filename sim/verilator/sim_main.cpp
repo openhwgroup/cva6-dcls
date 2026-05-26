@@ -53,7 +53,7 @@
 // allow modulus.  You can also use a double, if you wish.
 static vluint64_t main_time = 0;
 
-static const char *verilog_plusargs[] = {"jtag_rbb_enable", "time_out", "debug_disable"};
+static const char *verilog_plusargs[] = {"jtag_rbb_enable", "time_out", "debug_disable", "elf_file", "tohost_addr", NULL};
 
 extern dtm_t* dtm;
 extern remote_bitbang_t * jtag;
@@ -355,7 +355,7 @@ done_processing:
         }
   }
 
-  while (!dtm->done() && !jtag->done() && !(top->exit_o & 0x1)) {
+  while (!dtm->done() && !jtag->done() && !(top->exit_o & 0x1) && (uint64_t)main_time < max_cycles) {
     top->clk_i = 0;
     top->eval();
 #if VM_TRACE
@@ -383,7 +383,10 @@ done_processing:
     fclose(vcdfile);
 #endif
 
-  if (dtm->exit_code()) {
+  if ((uint64_t)main_time >= max_cycles && !(top->exit_o & 0x1)) {
+    fprintf(stderr, "%s *** TIMEOUT *** after %ld cycles\n", htif_argv[1], main_time);
+    ret = 1;
+  } else if (dtm->exit_code()) {
     fprintf(stderr, "%s *** FAILED *** (tohost = %d) after %ld cycles\n", htif_argv[1], dtm->exit_code(), main_time);
     ret = dtm->exit_code();
   } else if (jtag->exit_code()) {

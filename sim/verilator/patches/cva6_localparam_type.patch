@@ -1,3 +1,6 @@
+Copyright (c) 2026, Eclipse Foundation AISBL
+SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
 diff --git a/core/cva6.sv b/core/cva6.sv
 index 1c29ecfe..1ac38802 100644
 --- a/core/cva6.sv

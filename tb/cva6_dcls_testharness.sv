@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Eclipse Foundation AISBL
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+//
 // Copyright 2018 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in

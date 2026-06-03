@@ -50,6 +50,16 @@ Expected output:
 2: Hello World !
 3: Hello World !
 4: Hello World !
+
+CVA6-DCLS Verilator smoke-test CSR summary:
+	target    = cv64a6_imafdc_sv39_hpdcache_wb
+	mvendorid = 0x0000000000000602
+	marchid   = 0x0000000000000003
+	mimpid    = 0x0000000000000000
+	misa      = 0x800000000014112f
+	mxl       = 2 (RV64)
+	misa extensions = ABCDFIMSU
+CSR check passed.
 .../hello_world.elf *** SUCCESS *** (tohost = 0) after N cycles
 ```
 

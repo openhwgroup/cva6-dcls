@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Eclipse Foundation AISBL
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information

@@ -1,29 +1,53 @@
+# Editor temporaries
 *.swp
 *.swo
-site/*
-*.ucdb
-covhtmlreport/*
-*.vstf
-wlft*
-*nfs*
-*.sig
-*.dtb
-*.dasm
-build/*
-/tmp*
-*.dasm
-Bender.local
-build/
+
+# Waveform and trace artifacts
 *.vcd
 *.fsdb
+*.dasm
+*.traces
+*.iss
+
+# Compiled binaries
+*.elf
+*.o
+
+# Simulation tool outputs
+*.ucdb
+*.vstf
+*.sig
+*.dtb
 *.log
 *.out
 *.jou
-*.o
+covhtmlreport/
+wlft*
+*nfs*
+site/*
+/tmp*
+
+# Build directories
+build/
+
+# Bender dependency outputs
+Bender.local
+.bender/
+
+# Generated bender scripts
 target/sim/vsim/compile.dcls.tcl
 target/sim/vsim/transcript
-target/sim/vsim/work/*
+target/sim/vsim/work/
 target/sim/vsim/*.ini
 target/sim/vsim/*.wlf
-target/sim/vsim/trace_hart*.log
-target/sim/vlt/compile.dcls.tcl
+target/sim/vlt/compile.dcls.vlt
+
+# Verilator build and run outputs
+sim/verilator/obj_dir/
+sim/verilator/tests/build/
+sim/verilator/results/
+
+# Questa build outputs
+sim/vsim/work/
+sim/vsim/work-dpi/
+/cva6

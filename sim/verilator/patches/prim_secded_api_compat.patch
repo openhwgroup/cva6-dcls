@@ -1,0 +1,202 @@
+Copyright (c) 2026, Eclipse Foundation AISBL
+SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+diff --git a/rtl/HMR/recovery_csr.sv b/rtl/HMR/recovery_csr.sv
+index 446c93e..b46d29e 100644
+--- a/rtl/HMR/recovery_csr.sv
++++ b/rtl/HMR/recovery_csr.sv
+@@ -50,32 +50,32 @@ if (ECCEnabled) begin : gen_ecc_csrs
+   ecc_csrs_intf_t csr_d, csr_q;
+ 
+   prim_secded_39_32_enc csr_mstatus_ecc_encoder (
+-    .in  ( {25'd0,csr_inp.csr_mstatus} ), // mtvec is a 7-bit value
+-    .out ( csr_d.csr_mstatus           )
++    .data_i ( {25'd0,csr_inp.csr_mstatus} ), // mtvec is a 7-bit value
++    .data_o ( csr_d.csr_mstatus           )
+   );
+   prim_secded_39_32_enc csr_mie_ecc_encoder (
+-    .in  ( csr_inp.csr_mie ),
+-    .out ( csr_d.csr_mie   )
++    .data_i ( csr_inp.csr_mie ),
++    .data_o ( csr_d.csr_mie   )
+   );
+   prim_secded_39_32_enc csr_mtvec_ecc_encoder (
+-    .in  ( {8'd0, csr_inp.csr_mtvec} ), // mtvec is a 24-bit value
+-    .out ( csr_d.csr_mtvec            )
++    .data_i ( {8'd0, csr_inp.csr_mtvec} ), // mtvec is a 24-bit value
++    .data_o ( csr_d.csr_mtvec            )
+   );
+   prim_secded_39_32_enc csr_mscratch_ecc_encoder (
+-    .in  ( csr_inp.csr_mscratch ),
+-    .out ( csr_d.csr_mscratch   )
++    .data_i ( csr_inp.csr_mscratch ),
++    .data_o ( csr_d.csr_mscratch   )
+   );
+   prim_secded_39_32_enc csr_mip_ecc_encoder (
+-    .in  ( csr_inp.csr_mip ),
+-    .out ( csr_d.csr_mip   )
++    .data_i ( csr_inp.csr_mip ),
++    .data_o ( csr_d.csr_mip   )
+   );
+   prim_secded_39_32_enc csr_mepc_ecc_encoder (
+-    .in  ( csr_inp.csr_mepc),
+-    .out ( csr_d.csr_mepc  )
++    .data_i ( csr_inp.csr_mepc),
++    .data_o ( csr_d.csr_mepc  )
+   );
+   prim_secded_39_32_enc csr_mcause_ecc_encoder (
+-    .in  ( {26'd0, csr_inp.csr_mcause} ), // mcause is a 6-bit value
+-    .out ( csr_d.csr_mcause            )
++    .data_i ( {26'd0, csr_inp.csr_mcause} ), // mcause is a 6-bit value
++    .data_o ( csr_d.csr_mcause            )
+   );
+ 
+   always_ff @(posedge clk_i, negedge rst_ni) begin : ecc_csr_backup
+@@ -86,44 +86,44 @@ if (ECCEnabled) begin : gen_ecc_csrs
+   end
+ 
+   prim_secded_39_32_dec csr_mstatus_ecc_decoder (
+-    .in         ( csr_q.csr_mstatus ),
+-    .d_o        ( csr_dec_mstatus   ),
++    .data_i     ( csr_q.csr_mstatus ),
++    .data_o     ( csr_dec_mstatus   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mie_ecc_decoder (
+-    .in         ( csr_q.csr_mie ),
+-    .d_o        ( csr_dec_mie   ),
++    .data_i     ( csr_q.csr_mie ),
++    .data_o     ( csr_dec_mie   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mtvec_ecc_decoder (
+-    .in         ( csr_q.csr_mtvec ),
+-    .d_o        ( csr_dec_mtvec   ),
++    .data_i     ( csr_q.csr_mtvec ),
++    .data_o     ( csr_dec_mtvec   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mscratch_ecc_decoder (
+-    .in         ( csr_q.csr_mscratch ),
+-    .d_o        ( csr_dec_mscratch   ),
++    .data_i     ( csr_q.csr_mscratch ),
++    .data_o     ( csr_dec_mscratch   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mip_ecc_decoder (
+-    .in         ( csr_q.csr_mip ),
+-    .d_o        ( csr_dec_mip   ),
++    .data_i     ( csr_q.csr_mip ),
++    .data_o     ( csr_dec_mip   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mepc_ecc_decoder (
+-    .in         ( csr_q.csr_mepc ),
+-    .d_o        ( csr_dec_mepc   ),
++    .data_i     ( csr_q.csr_mepc ),
++    .data_o     ( csr_dec_mepc   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+   prim_secded_39_32_dec csr_mcause_ecc_decoder (
+-    .in         ( csr_q.csr_mcause ),
+-    .d_o        ( csr_dec_mcause   ),
++    .data_i     ( csr_q.csr_mcause ),
++    .data_o     ( csr_dec_mcause   ),
+     .syndrome_o ( ),
+     .err_o      ( )
+   );
+diff --git a/rtl/HMR/recovery_pc.sv b/rtl/HMR/recovery_pc.sv
+index 9be0934..edc00b0 100644
+--- a/rtl/HMR/recovery_pc.sv
++++ b/rtl/HMR/recovery_pc.sv
+@@ -52,8 +52,8 @@ generate
+      * Program Counter Backup *
+      **************************/
+     prim_secded_39_32_enc pc_ecc_encoder (
+-      .in  ( backup_program_counter_i ),
+-      .out ( pc_d                     )
++      .data_i ( backup_program_counter_i ),
++      .data_o ( pc_d                     )
+     );
+ 
+     always_ff @(posedge clk_i, negedge rst_ni) begin : pc_value_sampler
+@@ -70,8 +70,8 @@ generate
+     end
+ 
+     prim_secded_39_32_dec pc_ecc_decoder (
+-      .in         ( pc_q   ),
+-      .d_o        ( pc_out ),
++      .data_i     ( pc_q   ),
++      .data_o     ( pc_out ),
+       .syndrome_o (        ),
+       .err_o      (        )
+     );
+@@ -80,8 +80,8 @@ generate
+      * Branch Addr Backup *
+      **********************/
+     prim_secded_39_32_enc branch_addr_ecc_encoder (
+-      .in  ( backup_branch_addr_i ),
+-      .out ( branch_addr_d        )
++      .data_i ( backup_branch_addr_i ),
++      .data_o ( branch_addr_d        )
+     );
+ 
+     always_ff @(posedge clk_i, negedge rst_ni) begin : branch_addr_sampler
+@@ -98,8 +98,8 @@ generate
+     end
+ 
+     prim_secded_39_32_dec branch_addr_ecc_decoder (
+-      .in         ( branch_addr_q   ),
+-      .d_o        ( branch_addr_out ),
++      .data_i     ( branch_addr_q   ),
++      .data_o     ( branch_addr_out ),
+       .syndrome_o (                 ),
+       .err_o      (                 )
+     );
+diff --git a/rtl/HMR/recovery_rf.sv b/rtl/HMR/recovery_rf.sv
+index c4d4c16..cf5d586 100644
+--- a/rtl/HMR/recovery_rf.sv
++++ b/rtl/HMR/recovery_rf.sv
+@@ -96,19 +96,19 @@ module recovery_rf #(
+     if (ECCEnabled) begin : gen_ecc_region
+ 
+       prim_secded_39_32_enc a_port_ecc_encoder (
+-        .in  ( wdata_a_i ),
+-        .out ( wdata_a   )
++        .data_i ( wdata_a_i ),
++        .data_o ( wdata_a   )
+       );
+ 
+       prim_secded_39_32_enc b_port_ecc_encoder (
+-        .in  ( wdata_b_i ),
+-        .out ( wdata_b   )
++        .data_i ( wdata_b_i ),
++        .data_o ( wdata_b   )
+       );
+ 
+       for (genvar index = 0; index < NumWords; index++) begin : gen_internal_decoder
+         prim_secded_39_32_dec internal_memory_decoder (
+-          .in         ( ecc_mem [index] ),
+-          .d_o        ( mem [index]     ),
++          .data_i     ( ecc_mem [index] ),
++          .data_o     ( mem [index]     ),
+           .syndrome_o (                 ),
+           .err_o      (                 )
+         );
+@@ -117,8 +117,8 @@ module recovery_rf #(
+       if (FPU == 1 && PULP_ZFINX == 0) begin : gen_fp_decoders
+         for (genvar index = 0; index < NumFpWords; index++) begin : gen_internal_fp_decoder
+           prim_secded_39_32_dec internal_fp_memory_decoder (
+-            .in         ( ecc_mem_fp [index]  ),
+-            .d_o        ( mem_fp [index]      ),
++            .data_i     ( ecc_mem_fp [index]  ),
++            .data_o     ( mem_fp [index]      ),
+             .syndrome_o (                     ),
+             .err_o      (                     )
+           );

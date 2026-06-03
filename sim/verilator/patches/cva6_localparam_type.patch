@@ -1,0 +1,25 @@
+Copyright (c) 2026, Eclipse Foundation AISBL
+SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+diff --git a/core/cva6.sv b/core/cva6.sv
+index 1c29ecfe..1ac38802 100644
+--- a/core/cva6.sv
++++ b/core/cva6.sv
+@@ -322,7 +322,7 @@ module cva6
+     // I$ SRAM types (computed from CVA6Cfg)
+     localparam int unsigned IcacheOffsetWidth = $clog2(CVA6Cfg.ICACHE_LINE_WIDTH / 8),
+     localparam int unsigned IcacheClIdxWidth = CVA6Cfg.ICACHE_INDEX_WIDTH - IcacheOffsetWidth,
+-    localparam type icache_sram_req_t = struct packed {
++    parameter type icache_sram_req_t = struct packed {
+       logic [CVA6Cfg.ICACHE_SET_ASSOC-1:0]                             tag_req;
+       logic                                                            tag_we;
+       logic [IcacheClIdxWidth-1:0]                                     tag_addr;
+@@ -333,7 +333,7 @@ module cva6
+       logic [CVA6Cfg.ICACHE_LINE_WIDTH-1:0]                            data_wdata;
+       logic [CVA6Cfg.ICACHE_USER_LINE_WIDTH-1:0]                       data_wuser;
+     },
+-    localparam type icache_sram_resp_t = struct packed {
++    parameter type icache_sram_resp_t = struct packed {
+       logic [CVA6Cfg.ICACHE_SET_ASSOC-1:0][CVA6Cfg.ICACHE_TAG_WIDTH:0]         tag_rdata;
+       logic [CVA6Cfg.ICACHE_SET_ASSOC-1:0][CVA6Cfg.ICACHE_LINE_WIDTH-1:0]      data_rdata;
+       logic [CVA6Cfg.ICACHE_SET_ASSOC-1:0][CVA6Cfg.ICACHE_USER_LINE_WIDTH-1:0] data_ruser;
